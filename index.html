@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>GeoPattern Generator // for humans</title>
+
+	<style>
+		html, body { margin: 0; }
+		#background {
+			width: 100%;
+			height: 100vh;
+		}
+		.toolbox {
+			z-index: 1;
+			max-width: 100%;
+			padding: 15px;
+			background-color: #fff;
+			position: absolute;
+			top: 0;
+			right: 0;
+			left: 0;
+		}
+	</style>
+</head>
+<body>
+	<a href="https://github.com/gpedro/geopattern-generator"><img style="position: absolute; top: 0; right: 0; border: 0; z-index: 2" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
+
+	<div id="background">
+		
+		<div class="toolbox">
+			<form id="generator">
+				<input type="text" name="color">
+				<select name="generator">
+					<option value="octogons">octogons</option>
+					<option value="overlappingCircles">overlappingCircles</option>
+					<option value="plusSigns">plusSigns</option>
+					<option value="xes">xes</option>
+					<option value="sineWaves">sineWaves</option>
+					<option value="hexagons">hexagons</option>
+					<option value="overlappingRings">overlappingRings</option>
+					<option value="plaid">plaid</option>
+					<option value="triangles">triangles</option>
+					<option value="squares">squares</option>
+					<option value="concentricCircles">concentricCircles</option>
+					<option value="diamonds">diamonds</option>
+					<option value="tessellation">tessellation</option>
+					<option value="nestedSquares">nestedSquares</option>
+					<option value="mosaicSquares">mosaicSquares</option>
+					<option value="chevrons">chevrons</option>
+				</select>
+
+				<input type="submit" value="Generate">
+				<input type="button" value="Export as SVG">
+			</form>
+		</div>
+	</div>
+
+	<script src="//cdn.rawgit.com/btmills/geopattern/1b7235e9/js/geopattern.min.js"></script>
+	<script>
+		(function (window, document) {
+
+			var randomHex = function () {
+				return '#'+Math.floor(Math.random()*16777215).toString(16);
+			};
+
+			window.onload = function () {
+				var inputs = document.querySelectorAll('#generator input[type="text"]');
+				inputs.forEach(function (item) {
+					item.value = randomHex();
+				});
+
+				generateBackground();
+			};
+
+			var exportAsSvg = document.querySelector('#generator input[type=button]');
+			exportAsSvg.addEventListener('click', function (event) {
+				event.preventDefault();
+
+				var background = document.getElementById('background');
+
+				window.open(background.dataset.original, '_blank');
+			});
+
+			function generateBackground(event) {
+				if (event) {
+					event.preventDefault();
+				}
+
+				var opts = {};
+				var inputs = document.querySelectorAll('#generator input');
+				inputs.forEach(function (item) {
+					if (item.type === 'text') {
+						opts[item.name] = item.value;
+					}
+				});
+
+				var generators = document.querySelector('#generator select[name="generator"]');
+				var generator = generators.options[generators.selectedIndex];
+				opts.generator = generator.value;
+
+				var bg = GeoPattern.generate(new Date().getTime(), opts);
+				var background = document.getElementById('background');
+				background.dataset.original = bg.toDataUri();
+				background.style['background-image'] = bg.toDataUrl();
+			}
+
+			var form = document.getElementById('generator');
+			form.addEventListener('submit', generateBackground);
+
+
+		})(window, document);
+	</script>
+</body>
+</html>
