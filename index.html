@@ -6,6 +6,10 @@
 
 	<style>
 		html, body { margin: 0; }
+		#export {
+			visibility: hidden;
+			display: none;
+		}
 		#background {
 			width: 100%;
 			height: 100vh;
@@ -26,7 +30,6 @@
 	<a href="https://github.com/gpedro/geopattern-generator"><img style="position: absolute; top: 0; right: 0; border: 0; z-index: 2" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
 
 	<div id="background">
-		
 		<div class="toolbox">
 			<form id="generator">
 				<input type="text" name="color">
@@ -50,18 +53,25 @@
 				</select>
 
 				<input type="submit" value="Generate">
-				<input type="button" value="Export as SVG">
+				<input type="button" data-export="svg" value="Export as SVG">
+				<input type="button" data-export="png" value="Export as PNG">
 			</form>
 		</div>
 	</div>
 
 	<script src="//cdn.rawgit.com/btmills/geopattern/1b7235e9/js/geopattern.min.js"></script>
+	<script src="//bowercdn.net/c/saveSvgAsPng-1.1.0/saveSvgAsPng.js"></script>
 	<script>
 		(function (window, document) {
 
-			var randomHex = function () {
-				return '#'+Math.floor(Math.random()*16777215).toString(16);
-			};
+			function randomHex() {
+				var hex = '#'+Math.floor(Math.random()*16777215).toString(16);
+				if (hex.length != 4 && hex.length != 7) {
+					return randomHex();
+				}
+
+				return hex;
+			}
 
 			window.onload = function () {
 				var inputs = document.querySelectorAll('#generator input[type="text"]');
@@ -72,13 +82,53 @@
 				generateBackground();
 			};
 
-			var exportAsSvg = document.querySelector('#generator input[type=button]');
-			exportAsSvg.addEventListener('click', function (event) {
-				event.preventDefault();
+			function downloadPng(uri, window) {
+				window.open(uri, '_blank');
+			}
 
-				var background = document.getElementById('background');
+			function convertSvgToPng(svg) {
+				return new Promise(function (resolve, reject) {
+					try {
+						svgAsPngUri(convertStringToNode(window.xablau.svg), {}, resolve);
+					} catch (e) {
+						reject(e);
+					}
+				});
+			}
 
-				window.open(background.dataset.original, '_blank');
+			function convertStringToNode(html) {
+				var el = document.createElement('div');
+				el.innerHTML = html;
+
+				if (!el.childNodes.length) {
+					return null;
+				}
+
+				return el.childNodes.item(0);
+			}
+
+			function handleExport(event) {
+				var filetype = this.dataset.export;
+
+				if (filetype === 'svg') {
+					window.open(window.xablau.uri, '_blank');
+					return;
+				}
+
+				if (filetype === 'png') {
+					var w = window.open('', '_blank');
+					convertSvgToPng(window.xablau.svg).then(function (uri) {
+						w.location.href = uri;
+					})
+					return;
+				}
+
+				alert('Unkown export format');
+			}
+
+			var exportBg = document.querySelectorAll('#generator [data-export]');
+			exportBg.forEach(function (exportBtn) {
+				exportBtn.addEventListener('click', handleExport);
 			});
 
 			function generateBackground(event) {
@@ -100,7 +150,10 @@
 
 				var bg = GeoPattern.generate(new Date().getTime(), opts);
 				var background = document.getElementById('background');
-				background.dataset.original = bg.toDataUri();
+				window.xablau = {
+					uri: bg.toDataUri(),
+					svg: bg.toSvg(),
+				};
 				background.style['background-image'] = bg.toDataUrl();
 			}
 
